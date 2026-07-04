@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#f4f6fa; --card:#ffffff; --border:#e5e9f0; --line:#eef1f6;
@@ -25,7 +26,7 @@
   .grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
   .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
     padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
-  .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
   .phead h2{font-size:14px;font-weight:600;margin:0;}
   .count{font-size:12px;font-weight:500;color:var(--muted);
     background:var(--line);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums;}
@@ -41,7 +42,7 @@
     box-shadow:0 0 0 3px var(--blue-soft);}
   .row input.filled{background:#fff;border-color:#bcd3f2;}
   .actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
-  button{font-family:inherit;font-size:14px;font-weight:500;height:38px;padding:0 18px;
+  button{font-family:inherit;font-size:14px;font-weight:500;height:38px;padding:0 16px;
     border-radius:8px;cursor:pointer;border:1px solid transparent;
     transition:background .12s,border-color .12s,opacity .12s;}
   .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
@@ -91,7 +92,8 @@
         <h2>Graph</h2>
         <div class="actions" style="margin:0;">
           <button class="btn-ghost" id="clearBtn">Clear</button>
-          <button class="btn-ghost" id="dlBtn" disabled>Download PNG</button>
+          <button class="btn-ghost" id="dlBtn" disabled>PNG</button>
+          <button class="btn-ghost" id="pdfBtn" disabled>PDF</button>
           <button class="btn-primary" id="genBtn">Generate graph</button>
         </div>
       </div>
@@ -175,6 +177,7 @@
     if (chart) chart.destroy();
     chart = new Chart(cv.getContext('2d'), cfg);
     document.getElementById('dlBtn').disabled = false;
+    document.getElementById('pdfBtn').disabled = false;
   }
 
   function download(){
@@ -185,6 +188,30 @@
     a.click();
   }
 
+  function downloadPDF(){
+    if (!chart) return;
+    if (!window.jspdf){ document.getElementById('hint').textContent = 'PDF library did not load.'; return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    doc.setFont('helvetica','bold'); doc.setFontSize(14);
+    doc.text('Power Chart' + (logId ? '  -  ' + logId : ''), 40, 42);
+    const img = chart.toBase64Image('image/png', 1);
+    const ratio = chart.height / chart.width;
+    const imgW = (W - 80) * 0.70, imgH = imgW * ratio;
+    doc.addImage(img, 'PNG', 40, 62, imgW, imgH);
+    let tx = 40 + imgW + 28, ty = 74;
+    doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.text('Values', tx, ty); ty += 18;
+    doc.setFont('helvetica','normal');
+    STEPS.forEach((p, i) => {
+      const v = inputs[i].value.trim() || '-';
+      doc.text(p + '%', tx, ty);
+      doc.text(String(v), tx + 64, ty);
+      ty += 17;
+    });
+    doc.save('PowerChart' + (logId ? '_' + logId : '') + '.pdf');
+  }
+
   function clearAll(){
     inputs.forEach(el => el.value = '');
     updateCount();
@@ -192,11 +219,13 @@
     document.getElementById('chart').style.display = 'none';
     document.getElementById('empty').style.display = 'flex';
     document.getElementById('dlBtn').disabled = true;
+    document.getElementById('pdfBtn').disabled = true;
     document.getElementById('hint').textContent = '';
   }
 
   document.getElementById('genBtn').addEventListener('click', generate);
   document.getElementById('dlBtn').addEventListener('click', download);
+  document.getElementById('pdfBtn').addEventListener('click', downloadPDF);
   document.getElementById('clearBtn').addEventListener('click', clearAll);
 </script>
 </body>
