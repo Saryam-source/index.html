@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f6fa; --card:#ffffff; --border:#e5e9f0; --line:#eef1f6;
+    --ink:#1f2937; --muted:#6b7280; --blue:#2563eb; --blue-dk:#1d4ed8;
+    --blue-soft:#e6f1fb; --cyan:#06b6d4; --green:#16a34a; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,Segoe UI,Arial,sans-serif;-webkit-font-smoothing:antialiased;padding:24px;}
+  .wrap{max-width:1040px;margin:0 auto;}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+  .mark{width:6px;height:34px;border-radius:3px;background:var(--blue);}
+  h1{font-size:20px;font-weight:600;margin:0;line-height:1.15;}
+  .sub{font-size:13px;color:var(--muted);margin-top:2px;}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start;}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
+  .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .phead h2{font-size:14px;font-weight:600;margin:0;}
+  .count{font-size:12px;font-weight:500;color:var(--muted);
+    background:var(--line);border-radius:20px;padding:3px 10px;font-variant-numeric:tabular-nums;}
+  .row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .pct{width:46px;font-size:13px;font-weight:500;color:var(--muted);text-align:right;
+    font-variant-numeric:tabular-nums;}
+  .row input{flex:1;height:38px;border:1px solid var(--border);border-radius:8px;
+    padding:0 12px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--ink);
+    background:#fbfcfe;transition:border-color .12s,box-shadow .12s,background .12s;}
+  .row input::placeholder{color:#b6bcc8;}
+  .row input:hover{border-color:#cfd6e2;}
+  .row input:focus{outline:none;border-color:var(--blue);background:#fff;
+    box-shadow:0 0 0 3px var(--blue-soft);}
+  .row input.filled{background:#fff;border-color:#bcd3f2;}
+  .actions{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  button{font-family:inherit;font-size:14px;font-weight:500;height:38px;padding:0 18px;
+    border-radius:8px;cursor:pointer;border:1px solid transparent;
+    transition:background .12s,border-color .12s,opacity .12s;}
+  .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .btn-primary:hover{background:var(--blue-dk);border-color:var(--blue-dk);}
+  .btn-ghost{background:#fff;color:var(--ink);border-color:var(--border);}
+  .btn-ghost:hover{border-color:#cfd6e2;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  .canvas-box{position:relative;height:440px;}
+  .empty{display:flex;align-items:center;justify-content:center;height:440px;text-align:center;
+    color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px;
+    background:#fbfcfe;padding:0 24px;}
+  .hint{font-size:12px;color:var(--muted);margin-top:12px;min-height:16px;}
+  @media(max-width:760px){.grid{grid-template-columns:1fr;} body{padding:16px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"></div>
+    <div>
+      <h1>Power Chart</h1>
+      <div class="sub" id="sub">Enter a power value for each percentage step, then generate the graph.</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="phead">
+        <h2>Power values</h2>
+        <span class="count" id="count">0 / 10</span>
+      </div>
+
+      <div class="row"><span class="pct">10%</span><input type="text" inputmode="decimal" data-pct="10" placeholder="value"></div>
+      <div class="row"><span class="pct">20%</span><input type="text" inputmode="decimal" data-pct="20" placeholder="value"></div>
+      <div class="row"><span class="pct">30%</span><input type="text" inputmode="decimal" data-pct="30" placeholder="value"></div>
+      <div class="row"><span class="pct">40%</span><input type="text" inputmode="decimal" data-pct="40" placeholder="value"></div>
+      <div class="row"><span class="pct">50%</span><input type="text" inputmode="decimal" data-pct="50" placeholder="value"></div>
+      <div class="row"><span class="pct">60%</span><input type="text" inputmode="decimal" data-pct="60" placeholder="value"></div>
+      <div class="row"><span class="pct">70%</span><input type="text" inputmode="decimal" data-pct="70" placeholder="value"></div>
+      <div class="row"><span class="pct">80%</span><input type="text" inputmode="decimal" data-pct="80" placeholder="value"></div>
+      <div class="row"><span class="pct">90%</span><input type="text" inputmode="decimal" data-pct="90" placeholder="value"></div>
+      <div class="row" style="margin-bottom:0;"><span class="pct">100%</span><input type="text" inputmode="decimal" data-pct="100" placeholder="value"></div>
+    </div>
+
+    <div class="panel">
+      <div class="phead">
+        <h2>Graph</h2>
+        <div class="actions" style="margin:0;">
+          <button class="btn-ghost" id="clearBtn">Clear</button>
+          <button class="btn-ghost" id="dlBtn" disabled>Download PNG</button>
+          <button class="btn-primary" id="genBtn">Generate graph</button>
+        </div>
+      </div>
+      <div class="canvas-box">
+        <div class="empty" id="empty">No graph yet — fill the values and press Generate graph.</div>
+        <canvas id="chart" style="display:none;"></canvas>
+      </div>
+      <div class="hint" id="hint"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STEPS = [10,20,30,40,50,60,70,80,90,100];
+  const inputs = Array.from(document.querySelectorAll('input[data-pct]'));
+  const params = new URLSearchParams(location.search);
+  const logId = params.get('logId') || params.get('recordId') || '';
+  if (logId) document.getElementById('sub').textContent = 'Log: ' + logId;
+
+  let chart = null;
+
+  function sanitize(el){
+    let v = el.value.replace(/[^0-9.\-]/g, '');
+    const neg = v.startsWith('-');
+    v = v.replace(/-/g, '');
+    const parts = v.split('.');
+    v = parts.shift() + (parts.length ? '.' + parts.join('') : '');
+    el.value = (neg ? '-' : '') + v;
+  }
+
+  function updateCount(){
+    let filled = 0;
+    inputs.forEach(el => {
+      const has = el.value.trim() !== '';
+      el.classList.toggle('filled', has);
+      if (has) filled++;
+    });
+    document.getElementById('count').textContent = filled + ' / 10';
+    return filled;
+  }
+
+  inputs.forEach(el => {
+    el.addEventListener('input', () => { sanitize(el); updateCount(); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+  });
+
+  const whiteBg = {
+    id:'whiteBg',
+    beforeDraw(c){ const x=c.ctx; x.save(); x.globalCompositeOperation='destination-over';
+      x.fillStyle='#ffffff'; x.fillRect(0,0,c.width,c.height); x.restore(); }
+  };
+
+  function generate(){
+    const hint = document.getElementById('hint');
+    const vals = inputs.map(el => el.value.trim() === '' ? null : Number(el.value));
+    const filled = vals.filter(v => v !== null).length;
+    if (filled === 0){ hint.textContent = 'Enter at least one value first.'; return; }
+    hint.textContent = filled < 10 ? (filled + ' of 10 values entered — graph drawn from filled points.') : '';
+
+    document.getElementById('empty').style.display = 'none';
+    const cv = document.getElementById('chart');
+    cv.style.display = 'block';
+
+    const cfg = {
+      type:'line',
+      data:{ labels: STEPS.map(p => p + '%'),
+        datasets:[{ label:'Power', data: vals, spanGaps:true,
+          borderColor:'#2563eb', backgroundColor:'rgba(6,182,212,.12)',
+          borderWidth:2, fill:true, tension:.3,
+          pointBackgroundColor:'#2563eb', pointRadius:4, pointHoverRadius:6 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          title:{display:!!logId, text: logId ? ('Power Chart — ' + logId) : '',
+            color:'#1f2937', font:{family:'Inter',size:14,weight:'600'}} },
+        scales:{
+          y:{title:{display:true,text:'Power',color:'#6b7280'}, grid:{color:'#eef1f6'}, ticks:{color:'#6b7280'}, beginAtZero:true},
+          x:{title:{display:true,text:'Percentage',color:'#6b7280'}, grid:{color:'#eef1f6'}, ticks:{color:'#6b7280'}} }
+      },
+      plugins:[whiteBg]
+    };
+    if (chart) chart.destroy();
+    chart = new Chart(cv.getContext('2d'), cfg);
+    document.getElementById('dlBtn').disabled = false;
+  }
+
+  function download(){
+    if (!chart) return;
+    const a = document.createElement('a');
+    a.href = chart.toBase64Image('image/png', 1);
+    a.download = 'PowerChart' + (logId ? '_' + logId : '') + '.png';
+    a.click();
+  }
+
+  function clearAll(){
+    inputs.forEach(el => el.value = '');
+    updateCount();
+    if (chart){ chart.destroy(); chart = null; }
+    document.getElementById('chart').style.display = 'none';
+    document.getElementById('empty').style.display = 'flex';
+    document.getElementById('dlBtn').disabled = true;
+    document.getElementById('hint').textContent = '';
+  }
+
+  document.getElementById('genBtn').addEventListener('click', generate);
+  document.getElementById('dlBtn').addEventListener('click', download);
+  document.getElementById('clearBtn').addEventListener('click', clearAll);
+</script>
+</body>
+</html>
